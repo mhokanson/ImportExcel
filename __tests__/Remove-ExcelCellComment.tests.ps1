@@ -15,20 +15,92 @@ Apple, New York, 1200,700
 "@  | Export-Excel  -Path $path  -WorksheetName Sheet1 -PassThru
 
         Close-ExcelPackage -ExcelPackage $excel
+#        $excel = Open-ExcelPackage -Path $path
+#		$ws = $excel.sheet1
+	}
+	it "A2 comment was not present                                                                " {
         $excel = Open-ExcelPackage -Path $path
 		$ws = $excel.sheet1
-	}
-	it "Comment was not present                                                                " {
-		Get-ExcelCellComment -Worksheet $ws -Column A -Row 2 | Should -Be $null
-	}
-	it "Comment is present                                                                     " {
-		Set-ExcelCellComment -Worksheet $ws -Column A -Row 2 -Comment "This is a test comment"
 		$comment = Get-ExcelCellComment -Worksheet $ws -Column A -Row 2
-		$comment.Text  | Should      -Be "This is a test comment"
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text | Should -Be $null
+		
 	}
-	it "Comment was removed                                                                    " {
+	it "B2 comment was not present                                                                " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column B -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text | Should -Be $null
+		
+	}
+	it "C2 comment was not present                                                                " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column C -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text | Should -Be $null
+		
+	}
+	it "Comments are added                                                                      " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		Set-ExcelCellComment -Worksheet $ws -Column A -Row 2 -Comment "This is a test comment in cell A2"
+		Set-ExcelCellComment -Worksheet $ws -Range "B2" -Comment "This is a test comment in cell B2"
+		Set-ExcelCellComment -Worksheet $ws -Range "C2:F6" -Comment "This is a test comment in cell C2" 
+		Set-ExcelCellComment -Worksheet $ws -Range "I9" -Comment "This is a test comment in cell I9" 
+		$comments = Get-ExcelCellComment -Worksheet $ws -Range "A1:ZZ1000"
+		
+		Close-ExcelPackage -ExcelPackage $excel
+		$comments.length              | Should      -Be 4
+	}
+#	it "Comments are present                                                                    " {
+#		$comments = Get-ExcelCellComment -Worksheet $ws -Range "A1:ZZ1000"
+#		$comments.length | Should -Be 4
+#	}
+	it "Comment A2 was removed by Column/Row                                                    " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
 		Remove-ExcelCellComment -Worksheet $ws -Column A -Row 2
-		Get-ExcelCellComment -Worksheet $ws -Column A -Row 2  | Should      -Be $null
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column A -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment                      | Should      -Be $null
+	}
+	it "3 comments are still present                                                            " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		$comments = Get-ExcelCellComment -Worksheet $ws -Range "A1:ZZ1000"
+		Close-ExcelPackage -ExcelPackage $excel
+		$comments.length | Should -Be 3
+	}
+	it "Comment B2 was removed by Range (Column/Row)                                            " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		Remove-ExcelCellComment -Worksheet $ws -Range "B2"
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column B -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment                       | Should      -Be $null
+	}
+	it "2 comments are still present                                                            " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		$comments = Get-ExcelCellComment -Worksheet $ws -Range "A1:ZZ1000"
+		$comments.length | Should -Be 2
+	}
+	it "Comment C2 was removed by Range (Cell:Cell)                                            " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		Remove-ExcelCellComment -Worksheet $ws -Range "C2:H8"
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column C -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment                       | Should      -Be $null
+	}
+	it "1 comment is still present                                                              " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		$comments = Get-ExcelCellComment -Worksheet $ws -Range "A1:ZZ1000"
+		Close-ExcelPackage -ExcelPackage $excel
+		$comments.address | Should -Be "I9"
 	}
 }
 

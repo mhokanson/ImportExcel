@@ -20,26 +20,17 @@ function Remove-ExcelCellComment {
 	param(
 		[Parameter(Mandatory = $true)]
 		[OfficeOpenXml.ExcelWorksheet]$Worksheet,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $false)]
+		[string]$Range,
+		[Parameter(Mandatory = $false)]
 		[string]$Column,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $false)]
 		[int]$Row
 	)
 			
-	# Convert column indexes to their names
-	if ($Column -match "\d") {
-		$Column = Get-ExcelColumnName -columnName $Column
-	}
+	$comments = Get-ExcelCellComment -Worksheet $Worksheet -Range $Range -Column $Column -Row $Row
 
-	$cellAddress = "$Column$Row"
-	$cellAddressPattern = [Regex]::new('[A-z]{1,2}[\d]+')
-	if ($($CellAddress -notmatch $cellAddressPattern)) {
-		Write-Error "Invalid cell specified"
-		return
+	foreach($comment in $comments) {
+		$Worksheet.Comments.Remove($comments)
 	}
-
-	# Comments are a collection, so not directly referencable by address
-	$comment = $Worksheet.Comments | Where-Object { $_.Address -eq "$Column$Row" }
-		
-	$Worksheet.Comments.Remove($comment)
 }

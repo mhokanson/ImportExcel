@@ -6,6 +6,10 @@ function Set-ExcelCellComment {
 		.PARAMETER Worksheet
 			The worksheet containing the target cell
 	 
+		.PARAMETER Range
+			A range of cells to add a comment to.
+			Excel can't span a comment across cells and puts the comment in the top-left-most cell in a range, so this is the behavior this function will take.
+	 
 		.PARAMETER Column
 			Column to add the comment to. This can either be a column letter/name
 			or the index of the column
@@ -31,9 +35,11 @@ function Set-ExcelCellComment {
 	param(
 		[Parameter(Mandatory = $true)]
 		[OfficeOpenXml.ExcelWorksheet]$Worksheet,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $false)]
+		[string]$Range,
+		[Parameter(Mandatory = $false)]
 		[string]$Column,
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $false)]
 		[int]$Row,
 		[Parameter(Mandatory = $true)]
 		[string]$Comment,
@@ -41,16 +47,35 @@ function Set-ExcelCellComment {
 		[switch]$noautofit
 	)
 
-	if($null -eq $Author) {
-		$Author = ""
+	# The workbook errors without an Author
+	if ($null -eq $Author -or
+		"" -eq $Author) {
+		$Author = "ImportExcel"
+	}
+	Write-Verbose "Author: $Author"
+	# If the range is multiple cells single out the first cell address
+	if ($Range -like "*:*") {
+		Write-Verbose "Getting the top-left cell from $Range"
+		$Range = $Range.Split(":")[0]
 	}
 
-	# Convert column indexes to their corresponding column names
-	if ($Column -match "\d") {
+	if ($null -ne $Range -and
+		"" -ne $Range) {
+		Write-Verbose "Setting cellAddress to Range"
+		$cellAddress = $Range
+	}
+	# Convert column indexes to their corresponding column names and turn into an address
+	elseif ($Column -match "\d") {
 		$Column = Get-ExcelColumnName -columnNumber $Column
+		Write-Verbose "Setting cellAddress based on column ($Column) and row ($Row)"
+		$cellAddress = "$Column$Row"
+	}
+	elseif ($null -ne $Column -and
+		"" -ne $Column) {
+		$cellAddress = "$Column$Row"
 	}
 
-	$cellAddress = "$Column$Row"
+	Write-Verbose "cellAddress: $cellAddress"
 	$cellAddressPattern = [Regex]::new('[A-z]{1,2}[\d]+')
 	if ($($CellAddress -notmatch $cellAddressPattern)) {
 		Write-Error "Invalid cell specified"
@@ -59,9 +84,9 @@ function Set-ExcelCellComment {
 	Write-Verbose "Worksheet type: $($Worksheet.GetType())"
 	# Check for an existing comment
 	# Comments are a collection, so not directly referencable by address
-	$cellComment = $Worksheet.Comments | Where-Object {$_.Address -eq "$Column$Row"}
-	if($null -eq $cellComment) {
-		$cellComment = $Worksheet.Comments.Add($Worksheet.Cells[$CellAddress],$Comment,$Author)
+	$cellComment = $Worksheet.Comments | Where-Object { $_.Address -eq "$Column$Row" }
+	if ($null -eq $cellComment) {
+		$cellComment = $Worksheet.Comments.Add($Worksheet.Cells[$CellAddress], $Comment, $Author)
 	}
 	else {
 		$cellComment.Text = $Comment

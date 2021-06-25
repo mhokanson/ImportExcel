@@ -16,21 +16,55 @@ Apple, New York, 1200,700
 
         Close-ExcelPackage -ExcelPackage $excel
 	}
-	it "Comment was not present                                                                " {
+	it "Comment1 was not present                                                                " {
         $excel = Open-ExcelPackage -Path $path
 		$ws = $excel.sheet1
-		$comment = Get-ExcelCellComment -Worksheet $ws -Column A -Row 2 
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column A -Row 2
 		Close-ExcelPackage -ExcelPackage $excel
 		$comment.Text | Should -Be $null
 		
 	}
-	it "Comment was added                                                                      " {
+	it "Comment2 was not present                                                                " {
         $excel = Open-ExcelPackage -Path $path
 		$ws = $excel.sheet1
-		Set-ExcelCellComment -Worksheet $ws -Column A -Row 2 -Comment "This is a test comment" 
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column B -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text | Should -Be $null
+		
+	}
+	it "Comment3 was not present                                                                " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column C -Row 2
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text | Should -Be $null
+		
+	}
+	it "Comment (column/row) was added                                                          " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		Set-ExcelCellComment -Worksheet $ws -Column A -Row 2 -Comment "This is a test comment in cell A2"
 		$comment = Get-ExcelCellComment -Worksheet $ws -Column A -Row 2
 		
 		Close-ExcelPackage -ExcelPackage $excel
-		$comment.Text              | Should      -Be "This is a test comment"
+		$comment.Text              | Should      -Be "This is a test comment in cell A2"
+	}
+	it "Comment (single-cell range) was added                                                   " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		Set-ExcelCellComment -Worksheet $ws -Range "B2" -Comment "This is a test comment in cell B2"
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column B -Row 2
+		
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text              | Should      -Be "This is a test comment in cell B2"
+	}
+	it "Comment (multi-cell range) was added                                                    " {
+        $excel = Open-ExcelPackage -Path $path
+		$ws = $excel.sheet1
+		Set-ExcelCellComment -Worksheet $ws -Range "C2:F6" -Comment "This is a test comment in cell C2" 
+		$comment = Get-ExcelCellComment -Worksheet $ws -Column C -Row 2
+		
+		Close-ExcelPackage -ExcelPackage $excel
+		$comment.Text              | Should      -Be "This is a test comment in cell C2"
 	}
 }
